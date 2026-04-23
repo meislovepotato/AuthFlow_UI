@@ -1,13 +1,27 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import {
+  Container,
+  Box,
+  CircularProgress,
+  Typography,
+  Alert,
+  Paper,
+  Stack,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ErrorIcon from "@mui/icons-material/Error";
 
 const Callback = () => {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [status, setStatus] = useState("processing"); // processing | success | error
   const navigate = useNavigate();
   const { refreshAccessToken } = useAuth();
+  const theme = useTheme();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -16,17 +30,17 @@ const Callback = () => {
 
       if (!code) {
         setError("Missing authorization code");
+        setStatus("error");
         setLoading(false);
         return;
       }
 
-      // Get the original redirect_uri and client_id from sessionStorage
-      // (you stored them before redirecting to /authorize)
       const clientId = sessionStorage.getItem("oauth_client_id");
       const redirectUri = sessionStorage.getItem("oauth_redirect_uri");
 
       if (!clientId || !redirectUri) {
         setError("Missing OAuth2 configuration");
+        setStatus("error");
         setLoading(false);
         return;
       }
@@ -61,22 +75,23 @@ const Callback = () => {
 
         const data = await res.json();
 
-        // Store tokens
         localStorage.setItem("accessToken", data.access_token);
         localStorage.setItem("refreshToken", data.refresh_token);
 
-        // Refresh the auth context
         await refreshAccessToken();
 
-        // Clean up session storage
         sessionStorage.removeItem("oauth_client_id");
         sessionStorage.removeItem("oauth_redirect_uri");
         sessionStorage.removeItem("pkce_code_verifier");
         sessionStorage.removeItem("oauth_client_secret");
 
-        navigate("/dashboard");
+        setStatus("success");
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1500);
       } catch (err) {
         setError(err.message);
+        setStatus("error");
       } finally {
         setLoading(false);
       }
@@ -85,10 +100,75 @@ const Callback = () => {
     handleCallback();
   }, [searchParams, navigate, refreshAccessToken]);
 
-  if (loading) return <div>Processing login...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
+  return (
+    <Container
+      maxWidth="sm"
+      sx={{ py: 12, display: "flex", minHeight: "80vh", alignItems: "center" }}
+    >
+      <Paper
+        elevation={3}
+        sx={{ p: 4, borderRadius: 2, width: "100%", textAlign: "center" }}
+      >
+        {status === "processing" && (
+          <Stack spacing={3} alignItems="center">
+            <CircularProgress size={60} />
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                Processing Login...
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Please wait while we complete your authentication
+              </Typography>
+            </Box>
+          </Stack>
+        )}
 
-  return <div>Redirecting...</div>;
+        {status === "success" && (
+          <Stack spacing={3} alignItems="center">
+            <CheckCircleIcon
+              sx={{
+                fontSize: 80,
+                color: "success.main",
+              }}
+            />
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                Login Successful!
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Redirecting you to dashboard...
+              </Typography>
+            </Box>
+          </Stack>
+        )}
+
+        {status === "error" && (
+          <Stack spacing={3}>
+            <Box sx={{ textAlign: "center" }}>
+              <ErrorIcon
+                sx={{
+                  fontSize: 80,
+                  color: "error.main",
+                  mb: 2,
+                }}
+              />
+              <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                Authentication Failed
+              </Typography>
+            </Box>
+            {error && (
+              <Alert severity="error" sx={{ textAlign: "left" }}>
+                {error}
+              </Alert>
+            )}
+            <Typography variant="body2" color="textSecondary">
+              Please try logging in again
+            </Typography>
+          </Stack>
+        )}
+      </Paper>
+    </Container>
+  );
 };
 
 export default Callback;

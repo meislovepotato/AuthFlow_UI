@@ -11,39 +11,69 @@ import Callback from "./pages/Callback.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import AuthGuard from "./components/AuthGuard.jsx";
 import AdminPanel from "./pages/AdminPanel.jsx";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#1976d2",
+    },
+    secondary: {
+      main: "#dc004e",
+    },
+    background: {
+      default: "#f5f5f5",
+    },
+  },
+  typography: {
+    fontFamily: [
+      "-apple-system",
+      "BlinkMacSystemFont",
+      '"Segoe UI"',
+      "Roboto",
+      '"Helvetica Neue"',
+      "Arial",
+      "sans-serif",
+    ].join(","),
+  },
+});
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/callback" element={<Callback />} />
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/callback" element={<Callback />} />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/admin"
-            element={
-              <AuthGuard requiredRoleId="admin-role-id">
-                <AdminPanel />
-              </AuthGuard>
-            }
-          />
+            <Route
+              path="/admin"
+              element={
+                <AuthGuard requiredRoleId="admin-role-id">
+                  <AdminPanel />
+                </AuthGuard>
+              }
+            />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 
