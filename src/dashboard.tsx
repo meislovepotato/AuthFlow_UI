@@ -35,7 +35,8 @@ export default function Dashboard() {
     setError(null);
 
     try {
-      const res = await fetch("http://localhost:3000/api/auth/me", {
+      const { API_URL } = await import("./config/api");
+      const res = await fetch(`${API_URL}/me`, {
         headers: {
           Authorization: "Bearer " + token,
         },
@@ -62,7 +63,12 @@ export default function Dashboard() {
   return (
     <Container maxWidth="md" sx={{ py: 6 }}>
       <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-        <Typography variant="h3" component="h1" gutterBottom sx={{ mb: 4, fontWeight: 600 }}>
+        <Typography
+          variant="h3"
+          component="h1"
+          gutterBottom
+          sx={{ mb: 4, fontWeight: 600 }}
+        >
           AuthFlow — Dashboard
         </Typography>
 
@@ -75,7 +81,9 @@ export default function Dashboard() {
             variant="contained"
             color="primary"
             size="large"
-            startIcon={loading ? <CircularProgress size={20} /> : <GetAppIcon />}
+            startIcon={
+              loading ? <CircularProgress size={20} /> : <GetAppIcon />
+            }
             onClick={handleMe}
             disabled={!token || loading}
           >
@@ -90,7 +98,11 @@ export default function Dashboard() {
         )}
 
         {token && (
-          <Typography variant="caption" color="success.main" sx={{ display: "block", mb: 2 }}>
+          <Typography
+            variant="caption"
+            color="success.main"
+            sx={{ display: "block", mb: 2 }}
+          >
             ✓ Token loaded successfully
           </Typography>
         )}
@@ -159,7 +171,11 @@ export default function Dashboard() {
         </DialogContent>
 
         <DialogActions sx={{ p: 2, pt: 1 }}>
-          <Button onClick={handleCloseDialog} variant="contained" color="primary">
+          <Button
+            onClick={handleCloseDialog}
+            variant="contained"
+            color="primary"
+          >
             Close
           </Button>
         </DialogActions>

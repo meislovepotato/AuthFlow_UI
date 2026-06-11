@@ -1,4 +1,4 @@
-const API_URL = "https://authflow-ui.onrender.com/api/auth";
+import { API_URL } from "../config/api";
 
 export const authService = {
   login: async (payload) => {

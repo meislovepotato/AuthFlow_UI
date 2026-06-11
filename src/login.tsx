@@ -18,7 +18,8 @@ export default function Login({ onSuccess }: Props) {
     };
 
     try {
-      const res = await fetch("http://localhost:3000/api/auth/login", {
+      const { API_URL } = await import("./config/api");
+      const res = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

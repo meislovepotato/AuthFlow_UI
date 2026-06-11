@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { API_URL } from "../config/api";
 import {
   Container,
   Box,
@@ -62,7 +63,7 @@ const Callback = () => {
         if (clientSecret) body.client_secret = clientSecret;
         if (codeVerifier) body.code_verifier = codeVerifier;
 
-        const res = await fetch("http://localhost:3000/api/auth/token", {
+        const res = await fetch(`${API_URL}/token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),

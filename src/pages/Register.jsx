@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { API_URL } from "../config/api";
 
 const Register = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -14,7 +15,7 @@ const Register = () => {
     setError(null);
 
     try {
-      const res = await fetch("http://localhost:3000/api/auth/register", {
+      const res = await fetch(`${API_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -36,7 +37,10 @@ const Register = () => {
 
   return (
     <div className="auth-page">
-      <div className="orb orb-2" style={{ opacity: 0.2, top: "-50px", right: "-60px" }} />
+      <div
+        className="orb orb-2"
+        style={{ opacity: 0.2, top: "-50px", right: "-60px" }}
+      />
       <div className="grid-bg" />
 
       <div className="auth-card">
@@ -46,9 +50,7 @@ const Register = () => {
         </div>
 
         <h1 className="auth-title">Create account</h1>
-        <p className="auth-sub">
-          Join developers already using AuthFlow
-        </p>
+        <p className="auth-sub">Join developers already using AuthFlow</p>
 
         {error && (
           <div className="alert alert-error">
@@ -89,7 +91,11 @@ const Register = () => {
             />
           </div>
 
-          <button type="submit" className="btn-submit" disabled={loading || success}>
+          <button
+            type="submit"
+            className="btn-submit"
+            disabled={loading || success}
+          >
             {loading ? "Creating account…" : "Create account →"}
           </button>
         </form>

@@ -1,14 +1,15 @@
 import { createContext, useState, useCallback } from "react";
+import { API_URL } from "../config/api";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(
-    localStorage.getItem("accessToken")
+    localStorage.getItem("accessToken"),
   );
   const [refreshToken, setRefreshToken] = useState(
-    localStorage.getItem("refreshToken")
+    localStorage.getItem("refreshToken"),
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -17,7 +18,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:3000/api/auth/login", {
+      const res = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -36,9 +37,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("refreshToken", data.refreshToken);
 
       // Auto-decode JWT to get user info
-      const decoded = JSON.parse(
-        atob(data.accessToken.split(".")[1])
-      );
+      const decoded = JSON.parse(atob(data.accessToken.split(".")[1]));
       setUser(decoded);
 
       return true;
@@ -52,7 +51,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      await fetch("http://localhost:3000/api/auth/logout", {
+      await fetch(`${API_URL}/logout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken }),
@@ -72,7 +71,7 @@ export const AuthProvider = ({ children }) => {
   const refreshAccessToken = useCallback(async () => {
     if (!refreshToken) return false;
     try {
-      const res = await fetch("http://localhost:3000/api/auth/refresh", {
+      const res = await fetch(`${API_URL}/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken }),
@@ -89,9 +88,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
 
-      const decoded = JSON.parse(
-        atob(data.accessToken.split(".")[1])
-      );
+      const decoded = JSON.parse(atob(data.accessToken.split(".")[1]));
       setUser(decoded);
 
       return true;

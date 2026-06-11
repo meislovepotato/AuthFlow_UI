@@ -1,6 +1,11 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams, Link as RouterLink } from "react-router-dom";
+import {
+  useNavigate,
+  useSearchParams,
+  Link as RouterLink,
+} from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { API_URL } from "../config/api";
 import { generateCodeVerifier, generateCodeChallenge } from "../pkce";
 
 const Login = () => {
@@ -35,7 +40,7 @@ const Login = () => {
       loginPayload.code_challenge = codeChallenge;
       loginPayload.code_challenge_method = "S256";
 
-      const res = await fetch("http://localhost:3000/api/auth/login", {
+      const res = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(loginPayload),
