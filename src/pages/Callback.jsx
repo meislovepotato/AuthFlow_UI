@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { API_URL } from "../config/api";
+import { apiPost } from "../utils/apiClient";
+import { useToast } from "../context/ToastContext";
 import {
   Container,
   Box,
@@ -23,6 +24,7 @@ const Callback = () => {
   const navigate = useNavigate();
   const { refreshAccessToken } = useAuth();
   const theme = useTheme();
+  const { showToast } = useToast();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -63,18 +65,7 @@ const Callback = () => {
         if (clientSecret) body.client_secret = clientSecret;
         if (codeVerifier) body.code_verifier = codeVerifier;
 
-        const res = await fetch(`${API_URL}/token`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Token exchange failed");
-        }
-
-        const data = await res.json();
+        const data = await apiPost("/token", body);
 
         localStorage.setItem("accessToken", data.access_token);
         localStorage.setItem("refreshToken", data.refresh_token);
@@ -91,7 +82,8 @@ const Callback = () => {
           navigate("/dashboard");
         }, 1500);
       } catch (err) {
-        setError(err.message);
+        const errObj = /** @type {any} */ (err);
+        setError(errObj?.message || "Token exchange failed");
         setStatus("error");
       } finally {
         setLoading(false);

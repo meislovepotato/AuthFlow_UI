@@ -16,12 +16,16 @@ import {
 import GetAppIcon from "@mui/icons-material/GetApp";
 import CloseIcon from "@mui/icons-material/Close";
 
+import { apiGet, codeMessage } from "./utils/apiClient";
+import { useToast } from "./context/ToastContext";
+
 export default function Dashboard() {
   const [token, setToken] = useState<string | null>(null);
   const [meOutput, setMeOutput] = useState<Record<string, any> | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     const storedToken = localStorage.getItem("accessToken");
@@ -35,22 +39,23 @@ export default function Dashboard() {
     setError(null);
 
     try {
-      const { API_URL } = await import("./config/api");
-      const res = await fetch(`${API_URL}/me`, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
+      const json = await apiGet("/me", {
+        headers: { Authorization: "Bearer " + token },
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to fetch user info");
-      }
-
-      const json = await res.json();
       setMeOutput(json);
       setOpenDialog(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error fetching user info");
+      const errObj = err as any;
+      const code = errObj?.errorCode || "SERVER_ERROR";
+      if (code === "RATE_LIMITED" || code === "SERVER_ERROR") {
+        showToast(codeMessage(code), "error");
+        setError(codeMessage(code));
+      } else {
+        setError(
+          errObj instanceof Error ? errObj.message : "Error fetching user info",
+        );
+      }
     } finally {
       setLoading(false);
     }

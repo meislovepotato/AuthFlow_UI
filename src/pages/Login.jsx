@@ -6,14 +6,18 @@ import {
 } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { API_URL } from "../config/api";
+import { CODE_MAP, codeMessage } from "../utils/apiClient";
+import { useToast } from "../context/ToastContext";
 import { generateCodeVerifier, generateCodeChallenge } from "../pkce";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
   const { login, loading } = useAuth();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [searchParams] = useSearchParams();
 
   const clientId = searchParams.get("client_id");
@@ -50,15 +54,33 @@ const Login = () => {
       if (res.redirected || res.status === 302) {
         window.location.href = res.url;
       } else if (!res.ok) {
-        const err = await res.json();
-        setError(err.error || "Login failed");
+        const err = await res.json().catch(() => ({}));
+        const code = err.errorCode || err.code || null;
+        if (code === "VALIDATION_ERROR") {
+          setFieldErrors(CODE_MAP.VALIDATION_ERROR(err));
+          setError(Object.values(CODE_MAP.VALIDATION_ERROR(err))[0]);
+        } else if (code === "INVALID_CREDENTIALS") {
+          setError(CODE_MAP.INVALID_CREDENTIALS());
+        } else if (code === "RATE_LIMITED" || code === "SERVER_ERROR") {
+          showToast(codeMessage(code), "error");
+          setError(codeMessage(code));
+        } else {
+          setError(err.error || "Login failed");
+        }
       }
     } else {
-      const success = await login(email, password);
-      if (success) {
+      setFieldErrors({});
+      setError(null);
+      const result = await login(email, password);
+      if (result && result.success) {
         navigate("/dashboard");
       } else {
-        setError("Invalid email or password");
+        if (result && result.fieldErrors) {
+          setFieldErrors(result.fieldErrors);
+          setError(Object.values(result.fieldErrors)[0]);
+        } else {
+          setError(result?.error || CODE_MAP.INVALID_CREDENTIALS());
+        }
       }
     }
   };
@@ -95,6 +117,11 @@ const Login = () => {
               required
               autoComplete="email"
             />
+            {fieldErrors.email && (
+              <div className="err" style={{ color: "#b00020" }}>
+                {fieldErrors.email}
+              </div>
+            )}
           </div>
 
           <div className="field">
@@ -108,6 +135,11 @@ const Login = () => {
               required
               autoComplete="current-password"
             />
+            {fieldErrors.password && (
+              <div className="err" style={{ color: "#b00020" }}>
+                {fieldErrors.password}
+              </div>
+            )}
           </div>
 
           <button type="submit" className="btn-submit" disabled={loading}>

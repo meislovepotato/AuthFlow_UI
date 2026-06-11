@@ -1,5 +1,6 @@
 import { createContext, useState, useCallback } from "react";
-import { API_URL } from "../config/api";
+import { apiPost, CODE_MAP, codeMessage } from "../utils/apiClient";
+import { useToast } from "./ToastContext";
 
 export const AuthContext = createContext();
 
@@ -13,24 +14,18 @@ export const AuthProvider = ({ children }) => {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { showToast } = useToast();
 
   const login = useCallback(async (email, password) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-        credentials: "include",
-      });
+      const data = await apiPost(
+        "/login",
+        { email, password },
+        { credentials: "include" },
+      );
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Login failed");
-      }
-
-      const data = await res.json();
       setAccessToken(data.accessToken);
       setRefreshToken(data.refreshToken);
       localStorage.setItem("accessToken", data.accessToken);
@@ -40,10 +35,22 @@ export const AuthProvider = ({ children }) => {
       const decoded = JSON.parse(atob(data.accessToken.split(".")[1]));
       setUser(decoded);
 
-      return true;
+      return { success: true };
     } catch (err) {
-      setError(err.message);
-      return false;
+      const errObj = /** @type {any} */ (err);
+      const code = errObj?.errorCode || "SERVER_ERROR";
+      if (code === "VALIDATION_ERROR") {
+        const fieldErrors = CODE_MAP.VALIDATION_ERROR(errObj);
+        setError(Object.values(fieldErrors)[0] || "Validation error");
+        return { success: false, fieldErrors, errorCode: code };
+      }
+
+      const message =
+        codeMessage(code, errObj) || errObj?.message || "Login failed";
+      if (code === "RATE_LIMITED" || code === "SERVER_ERROR")
+        showToast(message, "error");
+      setError(message);
+      return { success: false, error: message, errorCode: code };
     } finally {
       setLoading(false);
     }
@@ -51,14 +58,10 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      await fetch(`${API_URL}/logout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-        credentials: "include",
-      });
+      await apiPost("/logout", { refreshToken }, { credentials: "include" });
     } catch (err) {
-      console.error("Logout error:", err);
+      const errObj = /** @type {any} */ (err);
+      console.error("Logout error:", errObj);
     } finally {
       setAccessToken(null);
       setRefreshToken(null);
@@ -71,18 +74,7 @@ export const AuthProvider = ({ children }) => {
   const refreshAccessToken = useCallback(async () => {
     if (!refreshToken) return false;
     try {
-      const res = await fetch(`${API_URL}/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      });
-
-      if (!res.ok) {
-        await logout();
-        return false;
-      }
-
-      const data = await res.json();
+      const data = await apiPost("/refresh", { refreshToken });
       setAccessToken(data.accessToken);
       setRefreshToken(data.refreshToken);
       localStorage.setItem("accessToken", data.accessToken);
@@ -93,7 +85,8 @@ export const AuthProvider = ({ children }) => {
 
       return true;
     } catch (err) {
-      console.error("Token refresh error:", err);
+      const errObj = /** @type {any} */ (err);
+      console.error("Token refresh error:", errObj);
       await logout();
       return false;
     }

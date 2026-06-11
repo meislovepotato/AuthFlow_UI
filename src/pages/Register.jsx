@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
-import { API_URL } from "../config/api";
+import { apiPost, CODE_MAP, codeMessage } from "../utils/apiClient";
+import { useToast } from "../context/ToastContext";
 
 const Register = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -8,6 +9,7 @@ const Register = () => {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,21 +17,26 @@ const Register = () => {
     setError(null);
 
     try {
-      const res = await fetch(`${API_URL}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Registration failed");
-      }
-
+      await apiPost("/register", form);
       setSuccess(true);
       setTimeout(() => navigate("/login"), 1200);
     } catch (err) {
-      setError(err.message);
+      const errObj = /** @type {any} */ (err);
+      const code = errObj?.errorCode || "SERVER_ERROR";
+      if (code === "VALIDATION_ERROR") {
+        const fieldMap = CODE_MAP.VALIDATION_ERROR(errObj);
+        // show first field error as global as well
+        setError(Object.values(fieldMap)[0] || "Validation error");
+      } else if (code === "EMAIL_TAKEN") {
+        setError(CODE_MAP.EMAIL_TAKEN());
+      } else if (code === "ACCOUNT_LOCKED") {
+        setError(CODE_MAP.ACCOUNT_LOCKED());
+      } else if (code === "RATE_LIMITED" || code === "SERVER_ERROR") {
+        showToast(codeMessage(code), "error");
+        setError(codeMessage(code));
+      } else {
+        setError(errObj?.message || "Registration failed");
+      }
     } finally {
       setLoading(false);
     }

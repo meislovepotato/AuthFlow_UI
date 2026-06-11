@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { apiPost, CODE_MAP, codeMessage } from "./utils/apiClient";
+import { useToast } from "./context/ToastContext";
 
 interface Props {
   onSuccess: () => void;
@@ -6,6 +8,7 @@ interface Props {
 
 export default function Login({ onSuccess }: Props) {
   const [output, setOutput] = useState<string>("");
+  const { showToast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -18,27 +21,29 @@ export default function Login({ onSuccess }: Props) {
     };
 
     try {
-      const { API_URL } = await import("./config/api");
-      const res = await fetch(`${API_URL}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-
-      const json = await res.json();
-
+      const json = await apiPost("/login", body, { credentials: "include" });
       setOutput(JSON.stringify(json, null, 2));
-
-      if (res.ok) {
+      if (json?.accessToken) {
         localStorage.setItem("accessToken", json.accessToken);
         localStorage.setItem("refreshToken", json.refreshToken);
-
         onSuccess();
       }
     } catch (err) {
-      console.error(err);
+      const errObj = err as any;
+      const code = errObj?.errorCode || "SERVER_ERROR";
+      if (code === "VALIDATION_ERROR") {
+        setOutput(
+          JSON.stringify(
+            { fieldErrors: CODE_MAP.VALIDATION_ERROR(errObj) },
+            null,
+            2,
+          ),
+        );
+      } else {
+        const msg = codeMessage(code, errObj) || errObj?.message || "Error";
+        showToast(msg, "error");
+        setOutput(JSON.stringify({ error: msg }, null, 2));
+      }
     }
   };
 
