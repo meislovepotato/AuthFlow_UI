@@ -1,28 +1,46 @@
 import { useAuth } from "../hooks/useAuth";
 
 export const TokenDisplay = () => {
-  const { user, accessToken, refreshToken, logout } = useAuth();
+  const { user, accessToken, refreshToken } = useAuth();
+
+  const initials = user?.email
+    ? user.email.split("@")[0].slice(0, 2).toUpperCase()
+    : "??";
 
   return (
-    <div style={{ marginTop: 20 }}>
-      <h3>🔐 Token Debug</h3>
-
-      <div>
-        <strong>User:</strong>
-        <pre>{JSON.stringify(user, null, 2)}</pre>
+    <>
+      {/* User section */}
+      <div className="info-section">
+        <div className="info-header">
+          <span className="info-title">Authenticated user</span>
+          <span className="info-badge">● Active</span>
+        </div>
+        <div className="user-row">
+          <div className="user-avatar">{initials}</div>
+          <div>
+            <div className="user-email">{user?.email}</div>
+            <div className="user-meta">Role: {user?.role ?? "user"} · ID: {user?.id ?? "usr.—"}</div>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <strong>Access Token:</strong>
-        <textarea value={accessToken || ""} readOnly rows={4} style={{ width: "100%" }} />
+      {/* Access token */}
+      <div className="info-section">
+        <div className="info-header">
+          <span className="info-title">Access token</span>
+          <span className="info-badge info-badge-indigo">JWT · RS256</span>
+        </div>
+        <div className="token-pre">{accessToken || "—"}</div>
       </div>
 
-      <div>
-        <strong>Refresh Token:</strong>
-        <textarea value={refreshToken || ""} readOnly rows={4} style={{ width: "100%" }} />
+      {/* Refresh token */}
+      <div className="info-section">
+        <div className="info-header">
+          <span className="info-title">Refresh token</span>
+          <span className="info-badge info-badge-indigo">Opaque</span>
+        </div>
+        <div className="token-pre">{refreshToken || "—"}</div>
       </div>
-
-      <button onClick={logout}>Logout</button>
-    </div>
+    </>
   );
 };

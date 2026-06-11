@@ -1,25 +1,7 @@
 import { useState } from "react";
-import {
-  useNavigate,
-  useSearchParams,
-  Link as RouterLink,
-} from "react-router-dom";
+import { useNavigate, useSearchParams, Link as RouterLink } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { generateCodeVerifier, generateCodeChallenge } from "../pkce";
-import {
-  Container,
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  Box,
-  Alert,
-  CircularProgress,
-  Stack,
-  Link,
-} from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import LoginIcon from "@mui/icons-material/Login";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -28,7 +10,6 @@ const Login = () => {
   const { login, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const theme = useTheme();
 
   const clientId = searchParams.get("client_id");
   const redirectUri = searchParams.get("redirect_uri");
@@ -38,10 +19,7 @@ const Login = () => {
     e.preventDefault();
     setError(null);
 
-    const loginPayload = {
-      email,
-      password,
-    };
+    const loginPayload = { email, password };
 
     if (clientId && redirectUri) {
       const codeVerifier = generateCodeVerifier();
@@ -75,138 +53,73 @@ const Login = () => {
       if (success) {
         navigate("/dashboard");
       } else {
-        setError("Login failed");
+        setError("Invalid email or password");
       }
     }
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper
-        elevation={3}
-        sx={{
-          p: 4,
-          borderRadius: 2,
-          boxShadow: `0 10px 40px ${theme.palette.primary.main}15`,
-        }}
-      >
-        {/* Header */}
-        <Box sx={{ textAlign: "center", mb: 4 }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              mb: 2,
-            }}
-          >
-            <Box
-              sx={{
-                p: 1.5,
-                borderRadius: "50%",
-                bgcolor: "primary.light",
-              }}
-            >
-              <LoginIcon sx={{ fontSize: 32, color: "primary.main" }} />
-            </Box>
-          </Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-            Welcome Back
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Sign in to your account
-          </Typography>
-        </Box>
+    <div className="auth-page">
+      <div className="orb orb-1" style={{ opacity: 0.2 }} />
+      <div className="grid-bg" />
 
-        {/* Error Alert */}
+      <div className="auth-card">
+        <div className="auth-badge">
+          <span className="auth-badge-dot" />
+          Secure sign-in
+        </div>
+
+        <h1 className="auth-title">Welcome back</h1>
+        <p className="auth-sub">Sign in to your account to continue</p>
+
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
+          <div className="alert alert-error">
+            <span>⚠</span> {error}
+          </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleLogin}>
-          <Stack spacing={3}>
-            <TextField
-              label="Email Address"
+          <div className="field">
+            <label className="field-label">Email address</label>
+            <input
+              className="field-input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
-              fullWidth
-              variant="outlined"
               placeholder="you@example.com"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1.5,
-                },
-              }}
+              required
+              autoComplete="email"
             />
+          </div>
 
-            <TextField
-              label="Password"
+          <div className="field">
+            <label className="field-label">Password</label>
+            <input
+              className="field-input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
-              fullWidth
-              variant="outlined"
               placeholder="••••••••"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1.5,
-                },
-              }}
+              required
+              autoComplete="current-password"
             />
+          </div>
 
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              size="large"
-              fullWidth
-              disabled={loading}
-              sx={{
-                py: 1.5,
-                fontSize: "1rem",
-                fontWeight: 600,
-                textTransform: "none",
-              }}
-            >
-              {loading ? (
-                <>
-                  <CircularProgress size={20} sx={{ mr: 1 }} />
-                  Signing in...
-                </>
-              ) : (
-                "Sign In"
-              )}
-            </Button>
-          </Stack>
+          <button type="submit" className="btn-submit" disabled={loading}>
+            {loading ? "Signing in…" : "Sign in →"}
+          </button>
         </form>
 
-        {/* Footer */}
-        <Box sx={{ mt: 4, textAlign: "center" }}>
-          <Typography variant="body2" color="textSecondary">
-            Don't have an account?{" "}
-            <Link
-              component={RouterLink}
-              to="/register"
-              sx={{
-                color: "primary.main",
-                textDecoration: "none",
-                fontWeight: 600,
-                "&:hover": {
-                  textDecoration: "underline",
-                },
-              }}
-            >
-              Sign up
-            </Link>
-          </Typography>
-        </Box>
-      </Paper>
-    </Container>
+        <div className="auth-divider" />
+
+        <p className="auth-footer">
+          No account?{" "}
+          <RouterLink to="/register" className="auth-link">
+            Create one free
+          </RouterLink>
+        </p>
+      </div>
+    </div>
   );
 };
 

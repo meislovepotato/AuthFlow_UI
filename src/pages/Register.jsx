@@ -1,26 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
-import {
-  Container,
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  Box,
-  Alert,
-  CircularProgress,
-  Stack,
-  Link,
-} from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import AppRegistrationIcon from "@mui/icons-material/AppRegistration";
 
 const Register = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const theme = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,18 +16,17 @@ const Register = () => {
     try {
       const res = await fetch("http://localhost:3000/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Register failed");
+        throw new Error(err.error || "Registration failed");
       }
 
-      navigate("/login");
+      setSuccess(true);
+      setTimeout(() => navigate("/login"), 1200);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -50,135 +35,75 @@ const Register = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper
-        elevation={3}
-        sx={{
-          p: 4,
-          borderRadius: 2,
-          boxShadow: `0 10px 40px ${theme.palette.secondary.main}15`,
-        }}
-      >
-        {/* Header */}
-        <Box sx={{ textAlign: "center", mb: 4 }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              mb: 2,
-            }}
-          >
-            <Box
-              sx={{
-                p: 1.5,
-                borderRadius: "50%",
-                bgcolor: "secondary.light",
-              }}
-            >
-              <AppRegistrationIcon
-                sx={{ fontSize: 32, color: "secondary.main" }}
-              />
-            </Box>
-          </Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-            Create Account
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Sign up to get started
-          </Typography>
-        </Box>
+    <div className="auth-page">
+      <div className="orb orb-2" style={{ opacity: 0.2, top: "-50px", right: "-60px" }} />
+      <div className="grid-bg" />
 
-        {/* Error Alert */}
+      <div className="auth-card">
+        <div className="auth-badge">
+          <span className="auth-badge-dot" />
+          Free to start
+        </div>
+
+        <h1 className="auth-title">Create account</h1>
+        <p className="auth-sub">
+          Join developers already using AuthFlow
+        </p>
+
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
+          <div className="alert alert-error">
+            <span>⚠</span> {error}
+          </div>
         )}
 
-        {/* Form */}
+        {success && (
+          <div className="alert alert-success">
+            <span>✓</span> Account created — redirecting…
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
-          <Stack spacing={3}>
-            <TextField
-              label="Email Address"
+          <div className="field">
+            <label className="field-label">Email address</label>
+            <input
+              className="field-input"
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              required
-              fullWidth
-              variant="outlined"
               placeholder="you@example.com"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1.5,
-                },
-              }}
+              required
+              autoComplete="email"
             />
+          </div>
 
-            <TextField
-              label="Password"
+          <div className="field">
+            <label className="field-label">Password</label>
+            <input
+              className="field-input"
               type="password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
+              placeholder="Choose a strong password"
               required
-              fullWidth
-              variant="outlined"
-              placeholder="••••••••"
-              helperText="Choose a strong password"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1.5,
-                },
-              }}
+              autoComplete="new-password"
             />
+          </div>
 
-            <Button
-              type="submit"
-              variant="contained"
-              color="secondary"
-              size="large"
-              fullWidth
-              disabled={loading}
-              sx={{
-                py: 1.5,
-                fontSize: "1rem",
-                fontWeight: 600,
-                textTransform: "none",
-              }}
-            >
-              {loading ? (
-                <>
-                  <CircularProgress size={20} sx={{ mr: 1 }} />
-                  Creating Account...
-                </>
-              ) : (
-                "Create Account"
-              )}
-            </Button>
-          </Stack>
+          <button type="submit" className="btn-submit" disabled={loading || success}>
+            {loading ? "Creating account…" : "Create account →"}
+          </button>
         </form>
 
-        {/* Footer */}
-        <Box sx={{ mt: 4, textAlign: "center" }}>
-          <Typography variant="body2" color="textSecondary">
-            Already have an account?{" "}
-            <Link
-              component={RouterLink}
-              to="/login"
-              sx={{
-                color: "secondary.main",
-                textDecoration: "none",
-                fontWeight: 600,
-                "&:hover": {
-                  textDecoration: "underline",
-                },
-              }}
-            >
-              Sign in
-            </Link>
-          </Typography>
-        </Box>
-      </Paper>
-    </Container>
+        <div className="auth-divider" />
+
+        <p className="auth-footer">
+          Already have an account?{" "}
+          <RouterLink to="/login" className="auth-link">
+            Sign in
+          </RouterLink>
+        </p>
+      </div>
+    </div>
   );
 };
 
