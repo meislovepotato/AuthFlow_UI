@@ -3,6 +3,11 @@ import { useAuth } from "../hooks/useAuth";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const initials = user?.email
+    ? user.email.split("@")[0].slice(0, 2).toUpperCase()
+    : user?.name
+    ? user.name.slice(0, 2).toUpperCase()
+    : "??";
 
   return (
     <nav className="navbar">
@@ -39,10 +44,10 @@ const Navbar = () => {
                   color: "#fff",
                 }}
               >
-                {user.email[0].toUpperCase()}
+                {initials}
               </div>
               <span style={{ fontSize: 13, color: "var(--text)" }}>
-                {user.email}
+                {user?.email || user?.name || "User"}
               </span>
             </div>
             <button className="btn btn-outline" onClick={logout}>
