@@ -1,190 +1,77 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useAuth } from "./hooks/useAuth.js";
 import {
-  Container,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Typography,
-  Paper,
-  Box,
-  CircularProgress,
-  Alert,
-  Stack,
-} from "@mui/material";
-import GetAppIcon from "@mui/icons-material/GetApp";
-import CloseIcon from "@mui/icons-material/Close";
+  Overview,
+  SecurityCenter,
+  ApiKeys,
+  Sessions,
+} from "./dashboard/index.jsx";
+import "./Dashboard.css";
 
-import { apiGet, codeMessage } from "./utils/apiClient";
-import { useToast } from "./context/ToastContext";
+const NAV = [
+  { id: "overview", label: "Overview", icon: "⊞" },
+  { id: "security", label: "Security Center", icon: "🛡" },
+  { id: "keys", label: "API Keys", icon: "🔑" },
+  { id: "sessions", label: "Active Sessions", icon: "💻" },
+];
+
+const PAGES = {
+  overview: Overview,
+  security: SecurityCenter,
+  keys: ApiKeys,
+  sessions: Sessions,
+};
 
 export default function Dashboard() {
-  const [token, setToken] = useState<string | null>(null);
-  const [meOutput, setMeOutput] = useState<Record<string, any> | null>(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { showToast } = useToast();
+  const { user, logout } = useAuth();
+  const [page, setPage] = useState<PageKey>("overview");
+  const Page = PAGES[page];
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("accessToken");
-    setToken(storedToken);
-  }, []);
+  type PageKey = keyof typeof PAGES;
 
-  const handleMe = async () => {
-    if (!token) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const json = await apiGet("/me", {
-        headers: { Authorization: "Bearer " + token },
-      });
-
-      setMeOutput(json);
-      setOpenDialog(true);
-    } catch (err) {
-      const errObj = err as any;
-      const code = errObj?.errorCode || "SERVER_ERROR";
-      if (code === "RATE_LIMITED" || code === "SERVER_ERROR") {
-        showToast(codeMessage(code), "error");
-        setError(codeMessage(code));
-      } else {
-        setError(
-          errObj instanceof Error ? errObj.message : "Error fetching user info",
-        );
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-  };
+  const initials = user?.email
+    ? user.email.split("@")[0].slice(0, 2).toUpperCase()
+    : "??";
 
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
-      <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-        <Typography
-          variant="h3"
-          component="h1"
-          gutterBottom
-          sx={{ mb: 4, fontWeight: 600 }}
-        >
-          AuthFlow — Dashboard
-        </Typography>
+    <div className="dash-app">
+      <aside className="dash-sidebar-icon">
+        <div className="sb-logo">AF</div>
 
-        <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
-          Welcome! Click below to fetch your user information.
-        </Typography>
-
-        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            startIcon={
-              loading ? <CircularProgress size={20} /> : <GetAppIcon />
-            }
-            onClick={handleMe}
-            disabled={!token || loading}
+        {NAV.map((n) => (
+          <button
+            key={n.id}
+            className={`sb-item ${page === n.id ? "active" : ""}`}
+            title={n.label}
+            onClick={() => setPage(n.id as PageKey)}
           >
-            {loading ? "Loading..." : "Get My Info"}
-          </Button>
-        </Stack>
+            {n.icon}
+          </button>
+        ))}
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+        <div className="sb-spacer" />
+        <button className="sb-avatar" title={user?.email} onClick={logout}>
+          {initials}
+        </button>
+      </aside>
 
-        {token && (
-          <Typography
-            variant="caption"
-            color="success.main"
-            sx={{ display: "block", mb: 2 }}
-          >
-            ✓ Token loaded successfully
-          </Typography>
-        )}
-      </Paper>
+      <div className="dash-main-wrap">
+        <header className="dash-topbar">
+          <span className="topbar-crumb">AuthFlow</span>
+          <span className="topbar-sep">›</span>
+          <span className="topbar-title">
+            {NAV.find((n) => n.id === page)?.label}
+          </span>
+          <div className="topbar-spacer" />
+          <div className="pill pill-green">
+            <span className="pulse" /> All systems normal
+          </div>
+        </header>
 
-      {/* User Info Modal/Dialog */}
-      <Dialog
-        open={openDialog}
-        onClose={handleCloseDialog}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: 2,
-              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
-            },
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            pb: 1,
-          }}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Your User Information
-          </Typography>
-          <Button
-            onClick={handleCloseDialog}
-            size="small"
-            sx={{
-              minWidth: "auto",
-              p: 0.5,
-              borderRadius: 1,
-              "&:hover": { bgcolor: "action.hover" },
-            }}
-          >
-            <CloseIcon fontSize="small" />
-          </Button>
-        </DialogTitle>
-
-        <DialogContent sx={{ py: 2 }}>
-          {meOutput && (
-            <Box
-              component="pre"
-              sx={{
-                bgcolor: "grey.100",
-                p: 2,
-                borderRadius: 1,
-                overflow: "auto",
-                fontSize: "0.875rem",
-                fontFamily: "Courier, monospace",
-                color: "grey.900",
-                maxHeight: 300,
-                whiteSpace: "pre-wrap",
-                wordWrap: "break-word",
-              }}
-            >
-              {JSON.stringify(meOutput, null, 2)}
-            </Box>
-          )}
-        </DialogContent>
-
-        <DialogActions sx={{ p: 2, pt: 1 }}>
-          <Button
-            onClick={handleCloseDialog}
-            variant="contained"
-            color="primary"
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+        <main className="dash-content">
+          <Page />
+        </main>
+      </div>
+    </div>
   );
 }

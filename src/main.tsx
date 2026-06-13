@@ -11,7 +11,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Callback from "./pages/Callback";
-import Dashboard from "./dashboard";
+import Dashboard from "./pages/Dashboard.jsx";
 import AdminPanel from "./pages/AdminPanel";
 import "./style.css";
 
